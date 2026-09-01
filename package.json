@@ -1,0 +1,29 @@
+{
+  "name": "copilot-usage-report",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "engines": {
+    "node": ">=22.12.0"
+  },
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "check": "svelte-check --tsconfig ./tsconfig.app.json && tsc -p tsconfig.node.json"
+  },
+  "dependencies": {
+    "@lucide/svelte": "^1.38.0",
+    "chart.js": "^4.5.0"
+  },
+  "devDependencies": {
+    "@sveltejs/vite-plugin-svelte": "^7.3.0",
+    "@tsconfig/svelte": "^5.0.8",
+    "@types/node": "^24.13.3",
+    "@types/wicg-file-system-access": "^2023.10.7",
+    "svelte": "^5.56.10",
+    "svelte-check": "^4.7.6",
+    "typescript": "~6.0.2",
+    "vite": "^8.2.2"
+  }
+}
