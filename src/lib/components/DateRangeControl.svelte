@@ -20,6 +20,34 @@
     range = { start: candidateStart < bounds.start ? bounds.start : candidateStart, end };
   }
 
+  function clampDay(day: string, min: string, max: string): string {
+    if (day < min) return min;
+    if (day > max) return max;
+    return day;
+  }
+
+  function todayLocal(): string {
+    const d = new Date();
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${y}-${m}-${day}`;
+  }
+
+  function applyLastWeek() {
+    // 0=Sunday..6=Saturday; find the Monday of the week containing today (not bounds.end).
+    const today = todayLocal();
+    const dow = new Date(`${today}T00:00:00Z`).getUTCDay();
+    const daysSinceMonday = (dow + 6) % 7;
+    const thisMonday = addDays(today, -daysSinceMonday);
+    const lastSunday = addDays(thisMonday, -1);
+    const lastMonday = addDays(lastSunday, -6);
+    range = {
+      start: clampDay(lastMonday, bounds.start, bounds.end),
+      end: clampDay(lastSunday, bounds.start, bounds.end),
+    };
+  }
+
   function resetFull() {
     range = { ...bounds };
   }
@@ -28,6 +56,7 @@
 <div class="date-range-control">
   <div class="presets">
     <button type="button" onclick={() => applyPreset(7)}>Last 7 days</button>
+    <button type="button" onclick={applyLastWeek}>Last week</button>
     <button type="button" onclick={() => applyPreset(14)}>Last 14 days</button>
     <button type="button" onclick={() => applyPreset(30)}>Last 30 days</button>
     <button type="button" onclick={resetFull}>Full range</button>
