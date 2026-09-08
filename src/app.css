@@ -169,7 +169,8 @@ main {
   body {
     background: #fff;
   }
-  .no-print {
+    .no-print,
+    .concern-panel {
     display: none !important;
   }
   main {
@@ -177,8 +178,7 @@ main {
     padding: 0;
   }
   .kpi-card,
-  .chart-card,
-  .concern-panel {
+    .chart-card {
     break-inside: avoid;
     box-shadow: none !important;
   }

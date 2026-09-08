@@ -75,12 +75,6 @@ main { max-width: 1180px; margin: 0 auto; padding: 1.5rem 1.5rem 3rem; }
 .tone-warning { border-color: var(--warning-border); background: var(--warning-bg); }
 .tone-warning .kpi-value { color: var(--warning-text); }
 .tone-good .kpi-value { color: var(--good-text); }
-.concern-panel { border: 1px solid var(--warning-border); background: var(--warning-bg); border-radius: 10px; padding: 1rem 1.25rem; margin-bottom: 1.25rem; }
-.concern-panel h2 { margin: 0 0 0.6rem; font-size: 0.95rem; color: var(--warning-text); }
-.concern-panel ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.6rem; }
-.concern-panel li { display: flex; gap: 0.6rem; align-items: flex-start; }
-.concern-panel strong { display: block; font-size: 0.85rem; }
-.concern-panel p { margin: 0.15rem 0 0; font-size: 0.8rem; color: var(--muted-text); }
 .charts-grid { display: grid; grid-template-columns: 1fr; gap: 1rem; }
 .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
 .chart-card { background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 10px; padding: 1rem 1.25rem; }
@@ -94,7 +88,7 @@ main { max-width: 1180px; margin: 0 auto; padding: 1.5rem 1.5rem 3rem; }
 @media (max-width: 720px) { .two-col, .cost-model-pair, .cost-user-pair { grid-template-columns: 1fr; } .cost-model-pair, .cost-user-pair { grid-column: 1 / -1; } }
 @media print {
   :root { --bg: #fff; }
-  .kpi-card, .chart-card, .concern-panel { break-inside: avoid; }
+  .kpi-card, .chart-card { break-inside: avoid; }
 }
 `;
 
@@ -504,15 +498,6 @@ export function buildStandaloneHtml(d: ExportData): string {
   </section>`
     : '';
 
-  const concernsHtml = d.concerns.length
-    ? `<section class="concern-panel"><h2>Areas of Concern</h2><ul>${d.concerns
-        .map(
-          (c) =>
-            `<li><span>${c.severity === 'warning' ? '⚠' : 'ℹ'}</span><div><strong>${esc(c.title)}</strong><p>${esc(c.detail)}</p></div></li>`,
-        )
-        .join('')}</ul></section>`
-    : '';
-
   const dataScript = `window.__REPORT_DATA__ = ${JSON.stringify({
     trend: d.trend,
     models: d.models,
@@ -545,8 +530,6 @@ export function buildStandaloneHtml(d: ExportData): string {
     <h1>GitHub Copilot Usage Report</h1>
     <p class="subtitle">${esc(d.range.start)} → ${esc(d.range.end)} · ${d.kpis.activeUsers} of ${d.kpis.totalUsers} seats active · generated ${esc(new Date().toLocaleString())}</p>
   </header>
-
-  ${concernsHtml}
 
   <section class="kpi-grid">
     ${kpiCards}
