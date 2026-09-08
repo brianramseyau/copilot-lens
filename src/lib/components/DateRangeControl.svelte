@@ -48,6 +48,15 @@
     };
   }
 
+  function applyLastMonth() {
+    const today = todayLocal();
+    const firstOfThisMonth = `${today.slice(0, 7)}-01`;
+    const lastOfPrevMonth = addDays(firstOfThisMonth, -1);
+    const firstOfPrevMonth = `${lastOfPrevMonth.slice(0, 7)}-01`;
+    // Always the full calendar month, even if it extends past the available data.
+    range = { start: firstOfPrevMonth, end: lastOfPrevMonth };
+  }
+
   function resetFull() {
     range = { ...bounds };
   }
@@ -59,6 +68,7 @@
     <button type="button" onclick={applyLastWeek}>Last week</button>
     <button type="button" onclick={() => applyPreset(14)}>Last 14 days</button>
     <button type="button" onclick={() => applyPreset(30)}>Last 30 days</button>
+    <button type="button" onclick={applyLastMonth}>Last month</button>
     <button type="button" onclick={resetFull}>Full range</button>
   </div>
   <div class="inputs">
