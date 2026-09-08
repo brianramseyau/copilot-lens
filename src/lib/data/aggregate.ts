@@ -433,6 +433,44 @@ export function computeWeekendConcern(records: UsageRecord[]): WeekendConcern {
   };
 }
 
+export interface WeekendUserBreakdown {
+  username: string;
+  activity: number;
+  cost: number;
+}
+
+/**
+ * Per-user activity and net cost restricted to Saturday/Sunday days only,
+ * so weekend usage concerns can be traced back to specific users.
+ */
+export function computeWeekendUsageByUser(usageRecords: UsageRecord[], costRecords: CostRecord[]): WeekendUserBreakdown[] {
+  const byUser = new Map<string, WeekendUserBreakdown>();
+  const entry = (username: string) => {
+    let e = byUser.get(username);
+    if (!e) {
+      e = { username, activity: 0, cost: 0 };
+      byUser.set(username, e);
+    }
+    return e;
+  };
+
+  for (const r of usageRecords) {
+    if (!isWeekend(r.day)) continue;
+    const activity = r.user_initiated_interaction_count + r.code_generation_activity_count;
+    if (activity === 0) continue;
+    entry(r.user_login).activity += activity;
+  }
+  for (const r of costRecords) {
+    if (!isWeekend(r.date)) continue;
+    entry(r.username).cost += r.net_amount;
+  }
+
+  return [...byUser.values()]
+    .map((e) => ({ ...e, cost: round2(e.cost) }))
+    .filter((e) => e.activity > 0 || e.cost > 0)
+    .sort((a, b) => b.activity - a.activity || b.cost - a.cost);
+}
+
 export interface CostFilterResult {
   filtered: CostRecord[];
   excludedCount: number;

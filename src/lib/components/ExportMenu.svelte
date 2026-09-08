@@ -21,6 +21,7 @@
     tokenPaymentByUser,
     costTrend,
     costEfficiencyByModel,
+    weekendUsageByUser,
   }: ExportData = $props();
 
   let open = $state(false);
@@ -50,6 +51,7 @@
       tokenPaymentByUser,
       costTrend,
       costEfficiencyByModel,
+      weekendUsageByUser,
     });
     downloadTextFile(`copilot-usage-report_${range.start}_to_${range.end}.html`, html, 'text/html');
     open = false;

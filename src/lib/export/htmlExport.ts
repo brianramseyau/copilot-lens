@@ -1,4 +1,4 @@
-import type { Kpis, DailyPoint, RankedItem, UserRankedItem, DateRange, CostKpis, DailyCostPoint, ModelEfficiencyItem, DailyModelUsage, LanguageModelBreakdown, UserTokenPaymentBreakdown } from '../data/aggregate';
+import type { Kpis, DailyPoint, RankedItem, UserRankedItem, DateRange, CostKpis, DailyCostPoint, ModelEfficiencyItem, DailyModelUsage, LanguageModelBreakdown, UserTokenPaymentBreakdown, WeekendUserBreakdown } from '../data/aggregate';
 import type { ConcernItem } from '../components/ConcernPanel.svelte';
 
 export interface ExportData {
@@ -20,6 +20,7 @@ export interface ExportData {
   tokenPaymentByUser?: UserTokenPaymentBreakdown[];
   costTrend?: DailyCostPoint[];
   costEfficiencyByModel?: ModelEfficiencyItem[];
+  weekendUsageByUser?: WeekendUserBreakdown[];
 }
 
 function esc(s: string): string {
@@ -365,6 +366,46 @@ const EXPORT_JS = `
     });
   }
 
+  function weekendBarChart(canvasId, rows, key, color) {
+    new Chart(document.getElementById(canvasId), {
+      type: 'bar',
+      data: {
+        labels: rows.map(function (r) { return r.username; }),
+        datasets: [{ data: rows.map(function (r) { return r[key]; }), backgroundColor: color, borderRadius: 4 }],
+      },
+      options: {
+        indexAxis: 'y',
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            backgroundColor: tooltipBg,
+            titleColor: '#ffffff',
+            bodyColor: '#e7e9ee',
+            callbacks: {
+              label: function (ctx) {
+                var value = rows[ctx.dataIndex][key];
+                return key === 'cost' ? ' Weekend cost: $' + value.toFixed(2) : ' Weekend activity: ' + value.toLocaleString();
+              },
+            },
+          },
+        },
+        scales: {
+          x: { beginAtZero: true, ticks: { color: textColor, callback: key === 'cost' ? function (v) { return '$' + v; } : undefined }, grid: { color: gridColor } },
+          y: { ticks: { color: textColor }, grid: { display: false } },
+        },
+      },
+    });
+  }
+
+  function weekendUsageCharts(activityCanvasId, costCanvasId, items) {
+    var byActivity = items.filter(function (i) { return i.activity > 0; }).sort(function (a, b) { return b.activity - a.activity; }).slice(0, 10);
+    var byCost = items.filter(function (i) { return i.cost > 0; }).sort(function (a, b) { return b.cost - a.cost; }).slice(0, 10);
+    if (byActivity.length > 0 && document.getElementById(activityCanvasId)) weekendBarChart(activityCanvasId, byActivity, 'activity', '#dc2626');
+    if (byCost.length > 0 && document.getElementById(costCanvasId)) weekendBarChart(costCanvasId, byCost, 'cost', '#f59e0b');
+  }
+
   rankChart('modelsChart', data.models, '#7c3aed', 'generations', 8);
   rankChart('featuresChart', data.features, '#2563eb', 'activity', 8);
   rankChart('idesChart', data.ides, '#0891b2', 'activity', 8);
@@ -383,6 +424,9 @@ const EXPORT_JS = `
   }
   if (data.tokenPaymentByUser && document.getElementById('tokenPaymentChart')) {
     tokenPaymentChart('tokenPaymentChart', data.tokenPaymentByUser);
+  }
+  if (data.weekendUsageByUser && data.weekendUsageByUser.length > 0) {
+    weekendUsageCharts('weekendActivityChart', 'weekendCostChart', data.weekendUsageByUser);
   }
 })();
 `;
@@ -498,6 +542,18 @@ export function buildStandaloneHtml(d: ExportData): string {
   </section>`
     : '';
 
+  const weekendActivityCount = Math.min(d.weekendUsageByUser?.filter((i) => i.activity > 0).length ?? 0, 10);
+  const weekendCostCount = Math.min(d.weekendUsageByUser?.filter((i) => i.cost > 0).length ?? 0, 10);
+  const weekendSectionHtml =
+    d.weekendUsageByUser && d.weekendUsageByUser.length > 0
+      ? `<section class="charts-grid">
+    <div class="two-col">
+      <div class="chart-card"><h3>Weekend Activity by User <span class="legend-note">(Saturday/Sunday)</span></h3><div class="chart-wrap" style="height:${Math.max(180, weekendActivityCount * 34)}px"><canvas id="weekendActivityChart"></canvas></div></div>
+      <div class="chart-card"><h3>Weekend Cost by User <span class="legend-note">(Saturday/Sunday)</span></h3><div class="chart-wrap" style="height:${Math.max(180, weekendCostCount * 34)}px"><canvas id="weekendCostChart"></canvas></div></div>
+    </div>
+  </section>`
+      : '';
+
   const dataScript = `window.__REPORT_DATA__ = ${JSON.stringify({
     trend: d.trend,
     models: d.models,
@@ -512,6 +568,7 @@ export function buildStandaloneHtml(d: ExportData): string {
     tokenPaymentByUser: d.tokenPaymentByUser,
     costEfficiencyByModel: d.costEfficiencyByModel,
     costByDay: d.costTrend ? Object.fromEntries(d.costTrend.map((p) => [p.date, p.cost])) : undefined,
+    weekendUsageByUser: d.weekendUsageByUser,
   })};`;
 
   return `<!doctype html>
@@ -555,6 +612,8 @@ export function buildStandaloneHtml(d: ExportData): string {
     <div class="chart-card wide"><h3>Language Usage</h3><p class="legend-note">Distribution of all languages represented in model generation activity.</p><div class="chart-wrap" style="height:${Math.max(360, d.languages.length * 18)}px"><canvas id="languagesChart"></canvas></div></div>
     <div class="chart-card wide"><h3>Model Usage per Language</h3><p class="legend-note">Share of all generation activity by language and model; every language and model is shown.</p><div class="chart-scroll"><div style="min-width:${Math.max(760, d.modelUsageByLanguage.languages.length * 92)}px"><div class="chart-wrap" style="height:${Math.max(360, d.modelUsageByLanguage.models.length * 20)}px"><canvas id="modelsByLanguageChart"></canvas></div></div></div></div>
   </section>
+
+  ${weekendSectionHtml}
 
   <footer class="report-footer">
     <p>Exported snapshot from the GitHub Copilot Usage Report app · ${esc(d.sourceSummary)}. Charts are interactive (hover for exact values); this file does not update with new data.</p>

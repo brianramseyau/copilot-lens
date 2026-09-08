@@ -40,6 +40,7 @@
     computeTopUsers,
     computeDailyModelUsage,
     computeWeekendConcern,
+    computeWeekendUsageByUser,
     filterCostByKnownUsers,
     filterCostByRange,
     computeCostKpis,
@@ -59,6 +60,7 @@
   import ModelByLanguageChart from './lib/components/ModelByLanguageChart.svelte';
   import TokenPaymentByUserChart from './lib/components/TokenPaymentByUserChart.svelte';
   import CostEfficiencyChart from './lib/components/CostEfficiencyChart.svelte';
+  import WeekendUsageByUserChart from './lib/components/WeekendUsageByUserChart.svelte';
   import RubberDuck from './lib/components/icons/RubberDuck.svelte';
   import ConcernPanel, { type ConcernItem } from './lib/components/ConcernPanel.svelte';
   import ImportMenu from './lib/components/ImportMenu.svelte';
@@ -109,6 +111,7 @@
   let tokenPaymentByUser = $derived(computeTokenPaymentByUser(filteredCost));
   let costTrend = $derived(computeDailyCostTrend(filteredCost, range.start ? range : undefined));
   let costEfficiencyByModel = $derived(computeCostEfficiencyByModel(filtered, filteredCost));
+  let weekendUsageByUser = $derived(computeWeekendUsageByUser(filtered, filteredCost));
 
   // Cross-referenced cost/usage efficiency, only meaningful once both datasets are present.
   let costPerAcceptedSuggestion = $derived(
@@ -200,6 +203,7 @@
         tokenPaymentByUser={allCostRecords.length > 0 ? tokenPaymentByUser : undefined}
         costTrend={allCostRecords.length > 0 ? costTrend : undefined}
         costEfficiencyByModel={allCostRecords.length > 0 ? costEfficiencyByModel : undefined}
+        {weekendUsageByUser}
       />
     </div>
   </header>
@@ -354,6 +358,14 @@
     <LanguageUsageChart items={languages} />
     <ModelByLanguageChart breakdown={modelUsageByLanguage} />
   </section>
+
+  {#if weekendUsageByUser.length > 0}
+    <section class="charts-grid weekend-charts">
+      <div class="two-col">
+        <WeekendUsageByUserChart items={weekendUsageByUser} />
+      </div>
+    </section>
+  {/if}
 
   <footer class="report-footer">
     <p>
